@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/wahyuakbarwibowo/shipping-cart-rest-api/issues"
   },
-  "homepage": "https://github.com/wahyuakbarwibowo/shipping-cart-rest-api#readme"
+  "homepage": "https://github.com/wahyuakbarwibowo/shipping-cart-rest-api#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
