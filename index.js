@@ -54,17 +54,12 @@ app.get('/v1/products', (req, res) => {
 });
 
 app.post('/v1/products', upload.single('productImage'), (req, res) => {
-  const {
-    productName,
-    stock,
-    price
-  } = req.body;
-  fs.rename(
-    path.resolve(__dirname, req.file.path),
-    path.resolve(__dirname, `${req.file.path}.png`),
-    () => {}
-    );
+  const { productName, stock, price } = req.body;
   const productImage = `${req.file.filename}.png`;
+
+  // renaming file uploads
+  fs.rename(path.resolve(__dirname, req.file.path), path.resolve(__dirname, `${req.file.path}.png`), () => { });
+
   const now = new Date();
   createdAt = now;
   updatedAt = now;
@@ -78,6 +73,48 @@ app.post('/v1/products', upload.single('productImage'), (req, res) => {
     }
     return res.status(201).send({
       message: 'success add data products'
+    });
+  });
+});
+
+app.post('/v1/carts', (req, res) => {
+  const { carts } = req.body;
+  const now = new Date();
+
+  // add data cart logs
+  let sql = `INSERT INTO cart_logs (createdAt, updatedAt) VALUES ?`;
+  let values = [[now, now]];
+  connection.query(sql, [values], (err, result) => {
+    if (err) {
+      return res.status(500).send({
+        message: 'internal server error'
+      });
+    }
+    const cartLogId = result.insertId;
+    // create array for data product transaction,
+    // like this [[productId, cartLogId, amount, total, createdAt, updatedAt]]
+    const newCarts = carts.map(cart => {
+      // adjusmnet stock in products
+      const statement = {
+        sql: `UPDATE products SET stock = stock - ?, updatedAt = ? WHERE id= ?`,
+        values: [[cart.amount], [now], [cart.productId]]
+      }
+      connection.query(statement, () => { });
+      
+      const total = cart.amount * cart.price;
+      return [cart.productId, cartLogId, cart.amount, total, now, now];
+    });
+    sql = 'INSERT INTO product_transaction (productId, cartLogId, amount, total, createdAt, updatedAt) VALUES ?';
+    connection.query(sql, [newCarts], (err, result) => {
+      if (err) {
+        return res.status(500).send({
+          message: 'internal server error'
+        });
+      }
+      return res.status(201).send({
+        message: 'success to buy product',
+        data: carts
+      });
     });
   });
 });
